@@ -447,7 +447,7 @@ var pollingtoevent = require('polling-to-event');
 				.on('get', this.getHue.bind(this))
 				.on('set', this.setHue.bind(this));		
 				this.lightbulbService
-				.addCharacteristic(new Characteristic.Hue())
+				.addCharacteristic(new Characteristic.Saturation())
 				.on('get', this.getSaturation.bind(this))
 				.on('set', this.setSaturation.bind(this));						
 			}
