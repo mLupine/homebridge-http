@@ -10,16 +10,21 @@
 
     "accessories": [ {
 	        "accessory": "Http",
-                "name": "Alfresco Lamp",
+            "name": "Alfresco Lamp",
 			"switchHandling": "realtime",
-				"http_method": "GET",
-				"on_url":      "http://localhost/controller/1700/ON",
-				"off_url":     "http://localhost/controller/1700/OFF",
-				"status_url":  "http://localhost/status/100059",				
+			"http_method": "GET",
+			"on_url":      "http://localhost/controller/1700/ON",
+			"off_url":     "http://localhost/controller/1700/OFF",
+			"status_url":  "http://localhost/status/100059",				
 			"service": "Light",
-				"brightnessHandling": "yes",
-				"brightness_url":     "http://localhost/controller/1707/%b",
-				"brightnesslvl_url":  "http://localhost/status/100054"			
+			"brightnessHandling": "yes",
+			"brightness_url":     "http://localhost/controller/1707/%b",
+			"brightnesslvl_url":  "http://localhost/status/100054",
+			"colorHandling": "yes",
+			"hueset_url":     "http://localhost/hue/set/1707/%b",
+			"hue_url":  "http://localhost/hue/status/100054",
+			"saturationset_url":     "http://localhost/saturation/set/1707/%b",
+			"saturation_url":  "http://localhost/saturation/status/100054"	
 									    
        } 
     ]
