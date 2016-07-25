@@ -349,7 +349,7 @@ var pollingtoevent = require('polling-to-event');
 	
 		var url = this.saturationset_url.replace("%b", level)
 	
-		this.log("Setting hue to %s", level);
+		this.log("Setting saturation to %s", level);
 	
 		this.httpRequest(url, "", this.http_saturation_method, this.username, this.password, this.sendimmediately, function(error, response, body) {
 		if (error) {
