@@ -22,6 +22,8 @@ var pollingtoevent = require('polling-to-event');
 		this.brightnesslvl_url      = config["brightnesslvl_url"];
 		this.http_method            = config["http_method"] 	  	 	|| "GET";;
 		this.http_brightness_method = config["http_brightness_method"]  || this.http_method;
+		this.http_hue_method 		= config["http_hue_method"]  		|| this.http_method;
+		this.http_saturation_method = config["http_saturation_method"]  || this.http_method;
 		this.username               = config["username"] 	  	 	 	|| "";
 		this.password               = config["password"] 	  	 	 	|| "";
 		this.sendimmediately        = config["sendimmediately"] 	 	|| "";
@@ -29,7 +31,8 @@ var pollingtoevent = require('polling-to-event');
 		this.name                   = config["name"];
 		this.brightnessHandling     = config["brightnessHandling"] 	 	|| "no";
 		this.switchHandling 		= config["switchHandling"] 		 	|| "no";
-		
+		this.colorHandling 			= config["colorHandling"] 		 	|| "no";
+			
 		//realtime polling info
 		this.state = false;
 		this.currentlevel = 0;
@@ -92,6 +95,54 @@ var pollingtoevent = require('polling-to-event');
 				that.log(that.service, "received brightness",that.brightnesslvl_url, "level is currently", that.currentlevel); 		        
 				that.lightbulbService.getCharacteristic(Characteristic.Brightness)
 				.setValue(that.currentlevel);
+			}        
+    	});
+	}
+	// Hue Polling
+	if (this.hue_url && this.colorHandling =="realtime") {
+		var hueurl = this.hue_url;
+		var levelemitter = pollingtoevent(function(done) {
+	        	that.httpRequest(hueurl, "", "GET", that.username, that.password, that.sendimmediately, function(error, response, responseBody) {
+            		if (error) {
+                			that.log('HTTP get hue function failed: %s', error.message);
+							return;
+            		} else {               				    
+						done(null, responseBody);
+            		}
+        		}) // set longer polling as slider takes longer to set value
+    	}, {longpolling:true,interval:2000,longpollEventName:"huepoll"});
+
+		levelemitter.on("huepoll", function(data) {  
+			currenthue = parseInt(data);
+
+			if (that.lightbulbService) {				
+				that.log(that.service, "received hue",that.hue_url, "level is currently", currenthue); 		        
+				that.lightbulbService.getCharacteristic(Characteristic.Hue)
+				.setValue(currenthue);
+			}        
+    	});
+	}
+	// Saturation Polling
+	if (this.saturation_url && this.colorHandling =="realtime") {
+		var saturationurl = this.saturation_url;
+		var levelemitter = pollingtoevent(function(done) {
+	        	that.httpRequest(saturationurl, "", "GET", that.username, that.password, that.sendimmediately, function(error, response, responseBody) {
+            		if (error) {
+                			that.log('HTTP get saturation function failed: %s', error.message);
+							return;
+            		} else {               				    
+						done(null, responseBody);
+            		}
+        		}) // set longer polling as slider takes longer to set value
+    	}, {longpolling:true,interval:2000,longpollEventName:"saturationpoll"});
+
+		levelemitter.on("saturationpoll", function(data) {  
+			currentsaturation = parseInt(data);
+
+			if (that.lightbulbService) {				
+				that.log(that.service, "received saturation",that.hue_url, "level is currently", currentsaturation); 		        
+				that.lightbulbService.getCharacteristic(Characteristic.Saturation)
+				.setValue(currentsaturation);
 			}        
     	});
 	}
@@ -215,6 +266,96 @@ var pollingtoevent = require('polling-to-event');
 		}.bind(this));
 	},
 
+	getHue: function(callback) {
+		if (!this.hue_url) {
+			this.log.warn("Ignoring request; No hue level url defined.");
+			callback(new Error("No hue level url defined."));
+			return;
+		}		
+			var url = this.hue_url;
+			this.log("Getting Hue level");
+	
+			this.httpRequest(url, "", "GET", this.username, this.password, this.sendimmediately, function(error, response, responseBody) {
+			if (error) {
+				this.log('HTTP get hue function failed: %s', error.message);
+				callback(error);
+			} else {			
+				var binaryState = parseInt(responseBody);
+				var level = binaryState;
+				this.log("hue state is currently %s", binaryState);
+				callback(null, level);
+			}
+			}.bind(this));
+	  },
+
+	setHue: function(level, callback) {
+		
+		if (!this.hueset_url) {
+			this.log.warn("Ignoring request; No hue url defined.");
+			callback(new Error("No hue url defined."));
+			return;
+		}    
+	
+		var url = this.hueset_url.replace("%b", level)
+	
+		this.log("Setting hue to %s", level);
+	
+		this.httpRequest(url, "", this.http_hue_method, this.username, this.password, this.sendimmediately, function(error, response, body) {
+		if (error) {
+			this.log('HTTP hue function failed: %s', error);
+			callback(error);
+		} else {
+			this.log('HTTP hue function succeeded!');
+			callback();
+		}
+		}.bind(this));
+	},
+
+	getSaturation: function(callback) {
+		if (!this.saturation_url) {
+			this.log.warn("Ignoring request; No hue level url defined.");
+			callback(new Error("No saturation level url defined."));
+			return;
+		}		
+			var url = this.saturation_url;
+			this.log("Getting Saturation level");
+	
+			this.httpRequest(url, "", "GET", this.username, this.password, this.sendimmediately, function(error, response, responseBody) {
+			if (error) {
+				this.log('HTTP get saturation function failed: %s', error.message);
+				callback(error);
+			} else {			
+				var binaryState = parseInt(responseBody);
+				var level = binaryState;
+				this.log("saturation state is currently %s", binaryState);
+				callback(null, level);
+			}
+			}.bind(this));
+	  },
+
+	setSaturation: function(level, callback) {
+		
+		if (!this.saturationset_url) {
+			this.log.warn("Ignoring request; No saturation url defined.");
+			callback(new Error("No saturation url defined."));
+			return;
+		}    
+	
+		var url = this.hueset_url.replace("%b", level)
+	
+		this.log("Setting hue to %s", level);
+	
+		this.httpRequest(url, "", this.http_saturation_method, this.username, this.password, this.sendimmediately, function(error, response, body) {
+		if (error) {
+			this.log('HTTP saturation function failed: %s', error);
+			callback(error);
+		} else {
+			this.log('HTTP saturation function succeeded!');
+			callback();
+		}
+		}.bind(this));
+	},
+
 	identify: function(callback) {
 		this.log("Identify requested!");
 		callback(); // success
@@ -289,6 +430,26 @@ var pollingtoevent = require('polling-to-event');
 				.addCharacteristic(new Characteristic.Brightness())
 				.on('get', this.getBrightness.bind(this))
 				.on('set', this.setBrightness.bind(this));							
+			}
+			// Color Polling 
+			if (this.colorHandling == "realtime") {
+				this.lightbulbService 
+				.addCharacteristic(new Characteristic.Hue())
+				.on('get', function(callback) {callback(null, that.currentlevel)})
+				.on('set', this.setHue.bind(this));
+				this.lightbulbService 
+				.addCharacteristic(new Characteristic.Saturation())
+				.on('get', function(callback) {callback(null, that.currentlevel)})
+				.on('set', this.setSaturation.bind(this));
+			} else if (this.colorHandling == "yes") {
+				this.lightbulbService
+				.addCharacteristic(new Characteristic.Hue())
+				.on('get', this.getHue.bind(this))
+				.on('set', this.setHue.bind(this));		
+				this.lightbulbService
+				.addCharacteristic(new Characteristic.Hue())
+				.on('get', this.getSaturation.bind(this))
+				.on('set', this.setSaturation.bind(this));						
 			}
 	
 			return [informationService, this.lightbulbService];
