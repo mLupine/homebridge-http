@@ -40,6 +40,8 @@ var pollingtoevent = require('polling-to-event');
 		//realtime polling info
 		this.state = false;
 		this.currentlevel = 0;
+		this.currenthue = 0;
+		this.currentsaturation = 0;
 		var that = this;
 		
 		// Status Polling, if you want to add additional services that don't use switch handling you can add something like this || (this.service=="Smoke" || this.service=="Motion"))
@@ -117,12 +119,12 @@ var pollingtoevent = require('polling-to-event');
     	}, {longpolling:true,interval:2000,longpollEventName:"huepoll"});
 
 		levelemitter.on("huepoll", function(data) {  
-			currenthue = parseInt(data);
+			that.currenthue = parseInt(data);
 
 			if (that.lightbulbService) {				
-				that.log(that.service, "received hue",that.hue_url, "level is currently", currenthue); 		        
+				that.log(that.service, "received hue",that.hue_url, "level is currently", that.currenthue); 		        
 				that.lightbulbService.getCharacteristic(Characteristic.Hue)
-				.setValue(currenthue);
+				.setValue(that.currenthue);
 			}        
     	});
 	}
@@ -141,12 +143,12 @@ var pollingtoevent = require('polling-to-event');
     	}, {longpolling:true,interval:2000,longpollEventName:"saturationpoll"});
 
 		levelemitter.on("saturationpoll", function(data) {  
-			currentsaturation = parseInt(data);
+			that.currentsaturation = parseInt(data);
 
 			if (that.lightbulbService) {				
-				that.log(that.service, "received saturation",that.hue_url, "level is currently", currentsaturation); 		        
+				that.log(that.service, "received saturation",that.hue_url, "level is currently", that.currentsaturation); 		        
 				that.lightbulbService.getCharacteristic(Characteristic.Saturation)
-				.setValue(currentsaturation);
+				.setValue(that.currentsaturation);
 			}        
     	});
 	}
@@ -345,7 +347,7 @@ var pollingtoevent = require('polling-to-event');
 			return;
 		}    
 	
-		var url = this.hueset_url.replace("%b", level)
+		var url = this.saturationset_url.replace("%b", level)
 	
 		this.log("Setting hue to %s", level);
 	
@@ -438,22 +440,22 @@ var pollingtoevent = require('polling-to-event');
 			// Color Polling 
 			if (this.colorHandling == "realtime") {
 				this.lightbulbService 
-				.addCharacteristic(new Characteristic.Hue())
-				.on('get', function(callback) {callback(null, that.currentlevel)})
-				.on('set', this.setHue.bind(this));
-				this.lightbulbService 
 				.addCharacteristic(new Characteristic.Saturation())
-				.on('get', function(callback) {callback(null, that.currentlevel)})
+				.on('get', function(callback) {callback(null, that.currentsaturation)})
 				.on('set', this.setSaturation.bind(this));
-			} else if (this.colorHandling == "yes") {
-				this.lightbulbService
+				this.lightbulbService 
 				.addCharacteristic(new Characteristic.Hue())
-				.on('get', this.getHue.bind(this))
-				.on('set', this.setHue.bind(this));		
+				.on('get', function(callback) {callback(null, that.currenthue)})
+				.on('set', this.setHue.bind(this));
+			} else if (this.colorHandling == "yes") {
 				this.lightbulbService
 				.addCharacteristic(new Characteristic.Saturation())
 				.on('get', this.getSaturation.bind(this))
-				.on('set', this.setSaturation.bind(this));						
+				.on('set', this.setSaturation.bind(this));	
+				this.lightbulbService
+				.addCharacteristic(new Characteristic.Hue())
+				.on('get', this.getHue.bind(this))
+				.on('set', this.setHue.bind(this));							
 			}
 	
 			return [informationService, this.lightbulbService];
